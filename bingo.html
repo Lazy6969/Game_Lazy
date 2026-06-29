@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔢 BINGO LOTO</title>
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f0c29, #200122, #000000);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            padding: 0;
+            overflow-y: auto;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        .game-container {
+            position: relative;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 20px 40px;
+            width: 100%;
+            max-width: 100%;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+        }
+
+        .back-home {
+            display: inline-block;
+            margin-bottom: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        .back-home:hover { color: #00f2ff; }
+
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 15px;
+            background: linear-gradient(to right, #00f2ff, #0061ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 242, 255, 0.3);
+        }
+
+        /* ===== TABLEAU BINGO 1-20 ===== */
+        .bingo-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            margin: 0 auto 20px auto;
+            max-width: 900px;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .cell:hover { background: rgba(255, 255, 255, 0.15); }
+        .cell.win-highlight { 
+            background: #fff !important; 
+            color: #000 !important; 
+            box-shadow: 0 0 15px #fff;
+            font-weight: bold;
+            transform: scale(1.1);
+            z-index: 5;
+        }
+
+        /* Couleurs de sélection par joueur */
+        .selected-p0 { background: #ff4757 !important; border-color: #ff4757 !important; box-shadow: 0 0 8px #ff4757; }
+        .selected-p1 { background: #2ed573 !important; border-color: #2ed573 !important; box-shadow: 0 0 8px #2ed573; }
+        .selected-p2 { background: #1e90ff !important; border-color: #1e90ff !important; box-shadow: 0 0 8px #1e90ff; }
+
+        /* ===== JOUEURS ===== */
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .player-card {
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 16px;
+            padding: 12px;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        .player-card.active-selection { border-color: #00f2ff; background: rgba(0, 242, 255, 0.05); }
+        .player-card.disabled { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
+
+        .player-name { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .player-name input { background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.2); color: #00f2ff; width: 100px; outline: none; font-weight: bold; }
+        .toggle-btn { font-size: 0.65rem; padding: 3px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; cursor: pointer; pointer-events: auto;}
+        .toggle-btn.off { background: #ff4757; }
+
+        .selection-info { font-size: 0.7rem; color: #aaa; margin-top: 5px; min-height: 2.2em; overflow: hidden; }
+
+        .input-group label { font-size: 0.7rem; color: rgba(255,255,255,0.5); display: block; }
+        .input-group input { width: 100%; padding: 6px; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; margin-top: 3px; }
+
+        .draw-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #00f2ff, #0061ff);
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 5px 15px rgba(0, 97, 255, 0.3);
+        }
+        .draw-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ===== STATS & HISTORIQUE ===== */
+        .stats-section { margin-top: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .stats-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
+        .stats-table th { color: rgba(255,255,255,0.5); padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .stats-table td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+        .history { margin-top: 15px; max-height: 80px; overflow-y: auto; }
+        .history-item { font-size: 0.75rem; padding: 4px 10px; background: rgba(255,255,255,0.05); margin-bottom: 2px; border-radius: 4px; display: flex; justify-content: space-between; }
+
+        /* POPUP */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .popup { background: #0a0a1a; padding: 30px; border-radius: 20px; text-align: center; border: 2px solid #00f2ff; min-width: 300px; }
+        .popup h2 { color: #00f2ff; margin-bottom: 15px; }
+        .ball-result { width: 80px; height: 80px; background: radial-gradient(circle at 30% 30%, #fff, #00f2ff); color: #000; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 2.5rem; font-weight: 900; margin: 0 auto 20px; box-shadow: 0 0 20px #00f2ff; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <a href="index.html" class="back-home">← Retour à l'accueil</a>
+        <h1>🔢 BINGO LOTO 20</h1>
+        
+        <p style="text-align:center; font-size:0.8rem; color:#aaa; margin-bottom:10px;">Cliquez sur un joueur puis sur les numéros du tableau pour les choisir.</p>
+
+        <div id="bingoGrid" class="bingo-grid">
+            <!-- Généré par JS -->
+        </div>
+
+        <div class="players-grid">
+            <script>
+                for(let i=0; i<3; i++) {
+                    document.write(`
+                        <div class="player-card" id="card-${i}" onclick="setActivePlayer(${i})">
+                            <div class="player-name">
+                                <input type="text" id="name-${i}" value="Joueur ${i+1}" onclick="event.stopPropagation()">
+                                <button class="toggle-btn" onclick="togglePlayer(${i}); event.stopPropagation();" id="tgl-${i}">Connecté</button>
+                            </div>
+                            <div class="input-group" onclick="event.stopPropagation()">
+                                <label>Mise par numéro (Ar)</label>
+                                <input type="number" id="bet-${i}" placeholder="Min 500" min="500">
+                            </div>
+                            <div class="selection-info" id="selection-${i}">Sélection : Aucun</div>
+                        </div>
+                    `);
+                }
+            </script>
+        </div>
+
+        <button class="draw-btn" id="drawBtn" onclick="startDraw()">🔮 Tirage du Numéro</button>
+
+        <div class="history" id="history"></div>
+
+        <div class="stats-section">
+            <h3>📊 Bilan Caissier</h3>
+            <table class="stats-table">
+                <thead>
+                    <tr><th>Joueur</th><th>Total Misé</th><th>Bilan Net</th></tr>
+                </thead>
+                <tbody id="stats-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay">
+        <div class="popup">
+            <h2>NUMÉRO SORTI</h2>
+            <div class="ball-result" id="resBall">?</div>
+            <div id="res-desc" style="margin-bottom:20px;"></div>
+            <button onclick="closePopup()" style="padding:10px 20px; cursor:pointer; background:#00f2ff; border:none; border-radius:5px; font-weight:bold;">Continuer</button>
+        </div>
+    </div>
+
+    <script>
+        let players = [
+            { active: true, selections: [], totalMise: 0, net: 0 },
+            { active: true, selections: [], totalMise: 0, net: 0 },
+            { active: true, selections: [], totalMise: 0, net: 0 }
+        ];
+        let activePlayerIndex = 0;
+        let isDrawing = false;
+
+        // Initialisation de la grille
+        const grid = document.getElementById('bingoGrid');
+        for(let i=1; i<=20; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.id = `n${i}`;
+            cell.textContent = i;
+            cell.onclick = () => toggleNumber(i);
+            grid.appendChild(cell);
+        }
+
+        function setActivePlayer(index) {
+            activePlayerIndex = index;
+            for(let i=0; i<3; i++) {
+                document.getElementById(`card-${i}`).classList.toggle('active-selection', i === index);
+            }
+        }
+        setActivePlayer(0);
+
+        function togglePlayer(id) {
+            players[id].active = !players[id].active;
+            document.getElementById(`card-${id}`).classList.toggle('disabled', !players[id].active);
+            document.getElementById(`tgl-${id}`).textContent = players[id].active ? 'Connecté' : 'Déconnecté';
+            document.getElementById(`tgl-${id}`).classList.toggle('off', !players[id].active);
+            // Vider les sélections si déconnecté
+            if(!players[id].active) {
+                players[id].selections.forEach(n => document.getElementById(`n${n}`).classList.remove(`selected-p${id}`));
+                players[id].selections = [];
+                updateSelectionText(id);
+            }
+        }
+
+        function toggleNumber(num) {
+            if (isDrawing || !players[activePlayerIndex].active) return;
+            
+            const p = players[activePlayerIndex];
+            const idx = p.selections.indexOf(num);
+            const cell = document.getElementById(`n${num}`);
+
+            if (idx > -1) {
+                p.selections.splice(idx, 1);
+                cell.classList.remove(`selected-p${activePlayerIndex}`);
+            } else {
+                p.selections.push(num);
+                cell.classList.add(`selected-p${activePlayerIndex}`);
+            }
+            updateSelectionText(activePlayerIndex);
+        }
+
+        function updateSelectionText(id) {
+            const txt = players[id].selections.length > 0 ? players[id].selections.sort((a,b)=>a-b).join(', ') : 'Aucun';
+            document.getElementById(`selection-${id}`).textContent = `Sélection (${players[id].selections.length}) : ${txt}`;
+        }
+
+        function startDraw() {
+            if(isDrawing) return;
+            let activeBets = [];
+            for(let i=0; i<3; i++) {
+                let b = parseInt(document.getElementById(`bet-${i}`).value) || 0;
+                if(players[i].active && players[i].selections.length > 0 && b >= 500) {
+                    activeBets.push({id:i, betPerNum:b});
+                }
+            }
+
+            if(activeBets.length === 0) return alert("Chaque joueur actif doit choisir au moins 1 numéro et miser min 500 Ar.");
+
+            isDrawing = true;
+            document.getElementById('drawBtn').disabled = true;
+            
+            let count = 0;
+            let shuffle = setInterval(() => {
+                let rand = Math.floor(Math.random() * 20) + 1;
+                document.getElementById('resBall').textContent = rand;
+                count++;
+                if(count > 20) {
+                    clearInterval(shuffle);
+                    finishDraw(activeBets);
+                }
+            }, 800 / 10);
+        }
+
+        function finishDraw(activeBets) {
+            const winNum = Math.floor(Math.random() * 20) + 1;
+            document.getElementById('resBall').textContent = winNum;
+            document.getElementById(`n${winNum}`).classList.add('win-highlight');
+
+            activeBets.forEach(play => {
+                const p = players[play.id];
+                const totalStake = play.betPerNum * p.selections.length;
+                p.totalMise += totalStake;
+
+                const isWin = p.selections.includes(winNum);
+                if (isWin) {
+                    // Gain net sur le numéro gagnant (+mise), perte sur les autres
+                    // Math: (+bet) + ((count-1) * -bet) -> non, principe de base:
+                    // Chaque numéro est une mise à part entière.
+                    p.net += play.betPerNum; // Profit net du numéro gagnant
+                    p.net -= (p.selections.length - 1) * play.betPerNum; // Perte des autres numéros
+                    addHistory(play.id, winNum, true, play.betPerNum);
+                } else {
+                    p.net -= totalStake;
+                    addHistory(play.id, winNum, false, totalStake);
+                }
+            });
+
+            setTimeout(() => {
+                document.getElementById('overlay').style.display = 'flex';
+                updateUI();
+            }, 600);
+        }
+
+        function updateUI() {
+            const body = document.getElementById('stats-body');
+            body.innerHTML = '';
+            players.forEach((p, i) => {
+                let name = document.getElementById(`name-${i}`).value || `J${i+1}`;
+                body.innerHTML += `<tr>
+                    <td>${name}</td>
+                    <td>${p.totalMise} Ar</td>
+                    <td style="color:${p.net >= 0 ? '#2ed573' : '#ff4757'}">${p.net} Ar</td>
+                </tr>`;
+            });
+        }
+
+        function addHistory(id, winNum, win, amount) {
+            const h = document.getElementById('history');
+            let name = document.getElementById(`name-${id}`).value;
+            let item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerHTML = `<span>${name} | Sorti: ${winNum}</span> <span>${win ? '✅' : '❌'} ${win ? '+'+amount : '-'+amount} Ar</span>`;
+            h.prepend(item);
+        }
+
+        function closePopup() {
+            document.getElementById('overlay').style.display = 'none';
+            document.querySelectorAll('.win-highlight').forEach(el => el.classList.remove('win-highlight'));
+            document.getElementById('drawBtn').disabled = false;
+            isDrawing = false;
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>

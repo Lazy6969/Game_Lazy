@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sélection de Jeux</title>
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); /* Garde le dégradé de fond */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            padding: 0; /* Supprime le padding du body pour un affichage plein écran */
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 40px;
+            background: linear-gradient(to right, #00ff88, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+        }
+
+        .game-selection {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .game-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 18px;
+            padding: 30px;
+            text-align: center;
+            text-decoration: none;
+            color: #fff;
+            width: 280px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            background: rgba(255, 255, 255, 0.12);
+            border-color: #00d4ff;
+        }
+
+        .game-card h2 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: #ffd200;
+        }
+
+        .game-card p {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+    </style>
+</head>
+<body>
+    <h1>Choisissez votre jeu !</h1>
+
+    <div class="game-selection">
+        <a href="dé.html" class="game-card">
+            <h2>🎲 Jeu de Dé</h2>
+            <p>Lancez le dé, misez et gagnez selon votre chiffre.</p>
+        </a>
+        <a href="aviator.html" class="game-card">
+            <h2>✈️ Aviator</h2>
+            <p>Tentez votre chance et encaissez avant le crash !</p>
+        </a>
+        <a href="switch.html" class="game-card">
+            <h2>🏃 JEU DE COURSE</h2>
+            <p>Misez sur votre coureur et suivez la course en direct !</p>
+        </a>
+        <a href="couleur.html" class="game-card">
+            <h2>🎨 JEU DE COULEUR</h2>
+            <p>Misez sur la couleur gagnante et doublez votre mise !</p>
+        </a>
+        <a href="roue.html" class="game-card">
+            <h2>🎡 JEU DE ROUE</h2>
+            <p>Tournez la roue et misez sur le bon numéro !</p>
+        </a>
+        <a href="bingo.html" class="game-card">
+            <h2>🔢 BINGO</h2>
+            <p>Sélectionnez vos numéros porte-bonheur et gagnez au loto !</p>
+        </a>
+    </div>
+</body>
+</html>

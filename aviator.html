@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aviator Crash</title>
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            padding: 0; /* Supprime le padding du body */
+            overflow-y: auto;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, #ff4757, #ffa502);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ===== CONTENEUR PRINCIPAL ===== */
+        .game-container {
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%; /* Utilise toute la largeur disponible */
+            max-width: 100%; /* S'assure qu'il ne dépasse pas 100% */
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .back-home {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        .back-home:hover { color: #ff4757; }
+
+        /* ===== PISTE ET AVION ===== */
+        .runway-container {
+            position: relative;
+            width: 100%;
+            height: 250px;
+            background: #1e1e2f;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: center;
+        }
+
+        .runway-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: repeating-linear-gradient(to bottom, transparent, transparent 10px, #fff 10px, #fff 30px);
+            transform: translateX(-50%);
+            opacity: 0.3;
+        }
+
+        .side-label {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.05);
+            pointer-events: none;
+        }
+        .pos-1 { left: 12.5%; }
+        .pos-2 { left: 37.5%; }
+        .pos-3 { left: 62.5%; }
+        .pos-4 { left: 87.5%; }
+
+        #airplane {
+            position: absolute;
+            top: 50%;
+            left: -100px;
+            transform: translateY(-50%);
+            font-size: 3rem;
+            z-index: 10;
+        }
+
+        /* ===== SECTION JOUEURS ===== */
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .player-card {
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 16px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+
+        .player-card.disabled {
+            opacity: 0.4;
+            filter: grayscale(1);
+        }
+
+        .player-card.disabled .input-group,
+        .player-card.disabled .player-name input {
+            pointer-events: none;
+        }
+
+        .player-name {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .player-name input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffa502;
+            font-weight: bold;
+            width: 130px;
+            outline: none;
+        }
+
+        .toggle-btn {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .toggle-btn.off {
+            background: #ff4757;
+            border-color: #ff4757;
+        }
+
+        .input-group label {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .fly-btn {
+            width: 100%;
+            padding: 20px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #ff4757, #ffa502);
+            color: #fff;
+            font-size: 1.3rem;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 8px 25px rgba(255, 71, 87, 0.25);
+            margin-bottom: 20px;
+        }
+
+        /* ===== STATS & HISTORIQUE (Style dé.html) ===== */
+        .stats-section {
+            margin-top: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+        .stats-table th { font-size: 0.75rem; color: rgba(255,255,255,0.5); padding: 10px; border-bottom: 2px solid rgba(255,255,255,0.1); }
+        .stats-table td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
+
+        .history {
+            margin-top: 25px;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 14px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            font-size: 0.8rem;
+            background: rgba(255,255,255,0.05);
+        }
+        .history-item.win { border-left: 3px solid #2ed573; background: rgba(46, 213, 115, 0.1); }
+        .history-item.lose { border-left: 3px solid #ff4757; background: rgba(255, 71, 87, 0.1); }
+
+        /* POPUP */
+        .overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .popup {
+            background: #1e1b46;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            min-width: 300px;
+            border: 1px solid #ff4757;
+        }
+        .close-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #ff4757;
+            border: none;
+            color: white;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <a href="index.html" class="back-home">← Retour à l'accueil</a>
+        <h1>✈️ Aviator Crash</h1>
+        <p style="text-align:center; color:rgba(255,255,255,0.6); margin-bottom:20px;">Misez sur la bonne position du crash ! (Mise min: 500 Ar)</p>
+
+        <!-- ZONE DE VOL -->
+        <div class="runway-container">
+            <div class="runway-line" style="left: 25%"></div>
+            <div class="runway-line" style="left: 50%"></div>
+            <div class="runway-line" style="left: 75%"></div>
+            <div class="side-label pos-1">1</div>
+            <div class="side-label pos-2">2</div>
+            <div class="side-label pos-3">3</div>
+            <div class="side-label pos-4">4</div>
+            <div id="airplane">✈️</div>
+        </div>
+
+        <!-- JOUEURS -->
+        <div class="players-grid">
+            <div class="player-card" id="card-0">
+                <div class="player-name">
+                    <input type="text" id="name-0" value="Joueur 1">
+                    <button class="toggle-btn" onclick="togglePlayer(0)" id="tgl-0">Connecté</button>
+                </div>
+                <div class="input-group">
+                    <label>Position choisie</label>
+                    <select id="side-0">
+                        <option value="1">Position 1</option>
+                        <option value="2">Position 2</option>
+                        <option value="3">Position 3</option>
+                        <option value="4">Position 4</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Mise (Ar)</label>
+                    <input type="number" id="bet-0" placeholder="0" min="500">
+                </div>
+            </div>
+            <div class="player-card" id="card-1">
+                <div class="player-name">
+                    <input type="text" id="name-1" value="Joueur 2">
+                    <button class="toggle-btn" onclick="togglePlayer(1)" id="tgl-1">Connecté</button>
+                </div>
+                <div class="input-group">
+                    <label>Position choisie</label>
+                    <select id="side-1">
+                        <option value="1">Position 1</option>
+                        <option value="2">Position 2</option>
+                        <option value="3">Position 3</option>
+                        <option value="4">Position 4</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Mise (Ar)</label>
+                    <input type="number" id="bet-1" placeholder="0" min="500">
+                </div>
+            </div>
+            <div class="player-card" id="card-2">
+                <div class="player-name">
+                    <input type="text" id="name-2" value="Joueur 3">
+                    <button class="toggle-btn" onclick="togglePlayer(2)" id="tgl-2">Connecté</button>
+                </div>
+                <div class="input-group">
+                    <label>Position choisie</label>
+                    <select id="side-2">
+                        <option value="1">Position 1</option>
+                        <option value="2">Position 2</option>
+                        <option value="3">Position 3</option>
+                        <option value="4">Position 4</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Mise (Ar)</label>
+                    <input type="number" id="bet-2" placeholder="0" min="500">
+                </div>
+            </div>
+        </div>
+
+        <button class="fly-btn" id="flyBtn" onclick="startFlight()">🛫 Lancer le vol</button>
+
+        <div class="history" id="history"></div>
+
+        <div class="stats-section">
+            <h3>📊 Bilan Caissier</h3>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>Joueur</th>
+                        <th>Total Misé</th>
+                        <th>Bilan Net</th>
+                    </tr>
+                </thead>
+                <tbody id="stats-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay">
+        <div class="popup">
+            <h2 id="res-title">BOOM !</h2>
+            <p id="res-desc"></p>
+            <button class="close-btn" onclick="closePopup()">Continuer</button>
+        </div>
+    </div>
+
+    <script>
+        const MIN_BET = 500;
+        let players = [
+            { active: true, totalMise: 0, net: 0 },
+            { active: true, totalMise: 0, net: 0 },
+            { active: true, totalMise: 0, net: 0 }
+        ];
+        let isFlying = false;
+
+        function startFlight() {
+            if (isFlying) return;
+            
+            let activeBets = [];
+            for(let i=0; i<3; i++) {
+                if (!players[i].active) continue;
+                const betVal = parseInt(document.getElementById(`bet-${i}`).value) || 0;
+                if (betVal >= MIN_BET) {
+                    activeBets.push({ id: i, bet: betVal, side: document.getElementById(`side-${i}`).value });
+                }
+            }
+
+            if (activeBets.length === 0) return alert("Misez au moins 500 Ar");
+
+            isFlying = true;
+            const btn = document.getElementById('flyBtn');
+            const plane = document.getElementById('airplane');
+            btn.disabled = true;
+            btn.textContent = "Vol en cours...";
+            
+            // Réinitialisation pour le décollage horizontal
+            plane.style.transition = "none";
+            plane.style.left = "-100px";
+            plane.innerHTML = "✈️";
+            
+            // Forcer le rendu avant de lancer l'animation
+            plane.offsetHeight;
+
+            setTimeout(() => {
+                // Choix aléatoire du crash (1 à 4)
+                const resultPos = Math.floor(Math.random() * 4) + 1;
+                
+                // Calcul de la durée proportionnelle à la distance (vitesse constante)
+                const duration = resultPos * 1.2; 
+                plane.style.transition = `left ${duration}s linear`;
+                plane.style.left = ((resultPos - 1) * 25 + 12.5) + "%";
+                
+                setTimeout(() => {
+                    plane.innerHTML = "💥";
+                    setTimeout(() => {
+                        processResults(resultPos, activeBets);
+                    }, 600);
+                }, duration * 1000); // Correspond à la durée dynamique calculée
+            }, 100);
+        }
+
+        function togglePlayer(id) {
+            players[id].active = !players[id].active;
+            const card = document.getElementById(`card-${id}`);
+            const btn = document.getElementById(`tgl-${id}`);
+            
+            if (players[id].active) {
+                card.classList.remove('disabled');
+                btn.textContent = 'Connecté';
+                btn.classList.remove('off');
+            } else {
+                card.classList.add('disabled');
+                btn.textContent = 'Déconnecté';
+                btn.classList.add('off');
+            }
+        }
+
+        function processResults(resultPos, activeBets) {
+            let summary = "";
+            activeBets.forEach(play => {
+                const isWin = parseInt(play.side) === resultPos;
+                players[play.id].totalMise += play.bet;
+                
+                if(isWin) {
+                    players[play.id].net += play.bet; // Gain = mise x2 (donc profit net = mise)
+                    addHistory(play.id, true, play.bet);
+                } else {
+                    players[play.id].net -= play.bet;
+                    addHistory(play.id, false, play.bet);
+                }
+            });
+
+            document.getElementById('res-title').textContent = `CRASH EN POSITION ${resultPos} !`;
+            document.getElementById('overlay').style.display = 'flex';
+            updateUI();
+        }
+
+        function updateUI() {
+            const body = document.getElementById('stats-body');
+            body.innerHTML = '';
+            players.forEach((p, i) => {
+                const name = document.getElementById(`name-${i}`).value || `J${i+1}`;
+                body.innerHTML += `
+                    <tr>
+                        <td>${name}</td>
+                        <td>${p.totalMise} Ar</td>
+                        <td style="color:${p.net >= 0 ? '#2ed573' : '#ff4757'}">${p.net} Ar</td>
+                    </tr>`;
+            });
+        }
+
+        function addHistory(id, win, amount) {
+            const h = document.getElementById('history');
+            const name = document.getElementById(`name-${id}`).value;
+            const item = document.createElement('div');
+            item.className = `history-item ${win ? 'win' : 'lose'}`;
+            item.innerHTML = `<span>${name}</span> <span>${win ? '+' : '-'}${win ? amount * 2 : amount} Ar</span>`;
+            h.prepend(item);
+        }
+
+        function closePopup() {
+            document.getElementById('overlay').style.display = 'none';
+            const plane = document.getElementById('airplane');
+            plane.style.transition = "none";
+            plane.style.left = "-100px";
+            plane.style.top = "50%";
+            plane.style.transform = "translateY(-50%)";
+            plane.innerHTML = "✈️";
+            document.getElementById('flyBtn').disabled = false;
+            document.getElementById('flyBtn').textContent = "🛫 Lancer le vol";
+            isFlying = false;
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>

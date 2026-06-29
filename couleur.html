@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎨 Jeu de Couleur</title>
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            padding: 0;
+            overflow-y: auto;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        .game-container {
+            position: relative;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .back-home {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        .back-home:hover { color: #ffd200; }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, #ffd200, #ff4757);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* ===== ZONE DE TIRAGE ===== */
+        .draw-area {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .color-box {
+            width: 150px;
+            height: 150px;
+            border-radius: 20px;
+            background: #333;
+            border: 5px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 4rem;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* ===== JOUEURS ===== */
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .player-card {
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 16px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .player-card.disabled { opacity: 0.3; filter: grayscale(1); }
+        .player-card.disabled .input-group { pointer-events: none; }
+
+        .player-name { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .player-name input { background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.2); color: #ffd200; width: 100px; outline: none; font-weight: bold; }
+
+        .toggle-btn { font-size: 0.7rem; padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; cursor: pointer; }
+        .toggle-btn.off { background: #ff4757; }
+
+        .input-group label { font-size: 0.75rem; color: rgba(255,255,255,0.5); display: block; margin-top: 5px; }
+        .input-group select, .input-group input { width: 100%; padding: 8px; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; margin-top: 5px; }
+
+        .draw-btn {
+            width: 100%;
+            padding: 20px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #ffd200, #f7971e);
+            color: #1a1a2e;
+            font-size: 1.3rem;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 8px 25px rgba(255, 210, 0, 0.2);
+        }
+        .draw-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ===== STATS & HISTORIQUE ===== */
+        .stats-section { margin-top: 30px; background: rgba(255, 255, 255, 0.05); border-radius: 16px; padding: 20px; }
+        .stats-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .stats-table th { font-size: 0.75rem; color: rgba(255,255,255,0.5); padding: 10px; border-bottom: 2px solid rgba(255,255,255,0.1); }
+        .stats-table td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
+
+        .history { margin-top: 25px; max-height: 120px; overflow-y: auto; }
+        .history-item { display: flex; justify-content: space-between; padding: 8px 14px; border-radius: 8px; margin-bottom: 4px; font-size: 0.8rem; background: rgba(255,255,255,0.05); }
+
+        /* POPUP */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .popup { background: #1a1b3a; padding: 40px; border-radius: 20px; text-align: center; border: 1px solid #ffd200; }
+        .close-btn { margin-top: 20px; padding: 10px 20px; cursor: pointer; background: #ffd200; border: none; color: #1a1a2e; border-radius: 8px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <a href="index.html" class="back-home">← Retour à l'accueil</a>
+        <h1>🎨 JEU DE COULEUR</h1>
+        
+        <div class="draw-area">
+            <div id="colorBox" class="color-box">?</div>
+        </div>
+
+        <div class="players-grid">
+            <!-- Joueurs -->
+            <script>
+                for(let i=0; i<3; i++) {
+                    document.write(`
+                        <div class="player-card" id="card-${i}">
+                            <div class="player-name">
+                                <input type="text" id="name-${i}" value="Joueur ${i+1}">
+                                <button class="toggle-btn" onclick="togglePlayer(${i})" id="tgl-${i}">ON</button>
+                            </div>
+                            <div class="input-group">
+                                <label>Couleur choisie</label>
+                                <select id="choice-${i}">
+                                    <option value="red">Rouge 🔴</option>
+                                    <option value="blue">Bleu 🔵</option>
+                                    <option value="green">Vert 🟢</option>
+                                    <option value="yellow">Jaune 🟡</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Mise (Ar)</label>
+                                <input type="number" id="bet-${i}" placeholder="Min 500" min="500">
+                            </div>
+                        </div>
+                    `);
+                }
+            </script>
+        </div>
+
+        <button class="draw-btn" id="drawBtn" onclick="startDraw()">🎰 Lancer le tirage</button>
+
+        <div class="history" id="history"></div>
+
+        <div class="stats-section">
+            <h3>📊 Bilan Caissier</h3>
+            <table class="stats-table">
+                <thead>
+                    <tr><th>Joueur</th><th>Total Misé</th><th>Bilan Net</th></tr>
+                </thead>
+                <tbody id="stats-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay">
+        <div class="popup">
+            <h2>RÉSULTAT</h2>
+            <div id="popupColor" style="width:100px; height:100px; border-radius:50%; margin:20px auto;"></div>
+            <p id="res-desc"></p>
+            <button class="close-btn" onclick="closePopup()">Continuer</button>
+        </div>
+    </div>
+
+    <script>
+        let players = [{active:true, total:0, net:0}, {active:true, total:0, net:0}, {active:true, total:0, net:0}];
+        let isDrawing = false;
+        const COLORS = {
+            red: { name: 'Rouge', hex: '#ff4757', emoji: '🔴' },
+            blue: { name: 'Bleu', hex: '#2e86de', emoji: '🔵' },
+            green: { name: 'Vert', hex: '#2ed573', emoji: '🟢' },
+            yellow: { name: 'Jaune', hex: '#ffd200', emoji: '🟡' }
+        };
+        const COLOR_KEYS = Object.keys(COLORS);
+
+        function togglePlayer(id) {
+            players[id].active = !players[id].active;
+            document.getElementById(`card-${id}`).classList.toggle('disabled', !players[id].active);
+            document.getElementById(`tgl-${id}`).textContent = players[id].active ? 'ON' : 'OFF';
+            document.getElementById(`tgl-${id}`).classList.toggle('off', !players[id].active);
+        }
+
+        function startDraw() {
+            if(isDrawing) return;
+            let activeBets = [];
+            for(let i=0; i<3; i++) {
+                let b = parseInt(document.getElementById(`bet-${i}`).value);
+                if(players[i].active && b >= 500) activeBets.push({id:i, amount:b, choice:document.getElementById(`choice-${i}`).value});
+            }
+            if(activeBets.length === 0) return alert("Misez au moins 500 Ar");
+
+            isDrawing = true;
+            document.getElementById('drawBtn').disabled = true;
+            const box = document.getElementById('colorBox');
+            
+            let count = 0;
+            let shuffle = setInterval(() => {
+                let randomKey = COLOR_KEYS[Math.floor(Math.random() * 4)];
+                box.style.backgroundColor = COLORS[randomKey].hex;
+                box.textContent = COLORS[randomKey].emoji;
+                count++;
+                if(count > 15) {
+                    clearInterval(shuffle);
+                    finishDraw(activeBets);
+                }
+            }, 100);
+        }
+
+        function finishDraw(activeBets) {
+            const winnerKey = COLOR_KEYS[Math.floor(Math.random() * 4)];
+            const box = document.getElementById('colorBox');
+            box.style.backgroundColor = COLORS[winnerKey].hex;
+            box.textContent = COLORS[winnerKey].emoji;
+            box.style.transform = "scale(1.2)";
+
+            activeBets.forEach(b => {
+                players[b.id].total += b.amount;
+                if(b.choice === winnerKey) {
+                    players[b.id].net += b.amount;
+                    addHistory(b.id, winnerKey, true, b.amount);
+                } else {
+                    players[b.id].net -= b.amount;
+                    addHistory(b.id, winnerKey, false, b.amount);
+                }
+            });
+
+            setTimeout(() => {
+                document.getElementById('popupColor').style.backgroundColor = COLORS[winnerKey].hex;
+                document.getElementById('res-desc').textContent = `La couleur gagnante est le ${COLORS[winnerKey].name} ${COLORS[winnerKey].emoji}`;
+                document.getElementById('overlay').style.display = 'flex';
+                updateUI();
+            }, 500);
+        }
+
+        function updateUI() {
+            const body = document.getElementById('stats-body');
+            body.innerHTML = '';
+            players.forEach((p, i) => {
+                let name = document.getElementById(`name-${i}`).value || `J${i+1}`;
+                body.innerHTML += `<tr>
+                    <td>${name}</td>
+                    <td>${p.total} Ar</td>
+                    <td style="color:${p.net >= 0 ? '#2ed573' : '#ff4757'}">${p.net} Ar</td>
+                </tr>`;
+            });
+        }
+
+        function addHistory(id, winnerKey, win, amount) {
+            const h = document.getElementById('history');
+            let name = document.getElementById(`name-${id}`).value;
+            let item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerHTML = `<span>${name} | ${COLORS[winnerKey].emoji}</span> <span>${win ? '✅ +' : '❌ -'}${win ? amount * 2 : amount} Ar</span>`;
+            h.prepend(item);
+        }
+
+        function closePopup() {
+            document.getElementById('overlay').style.display = 'none';
+            const box = document.getElementById('colorBox');
+            box.style.transform = "scale(1)";
+            box.style.backgroundColor = "#333";
+            box.textContent = "?";
+            document.getElementById('drawBtn').disabled = false;
+            isDrawing = false;
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>

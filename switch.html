@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏃 JEU DE COURSE - Course</title>
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            padding: 0; /* Supprime le padding du body */
+            overflow-y: auto;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        .game-container {
+            position: relative;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%; /* Utilise toute la largeur disponible */
+            max-width: 100%; /* S'assure qu'il ne dépasse pas 100% */
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .back-home {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        .back-home:hover { color: #e94560; }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, #e94560, #0f3460);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* ===== PISTE DE COURSE ===== */
+        .track-container {
+            background: #1a1a2e;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 2px solid rgba(255,255,255,0.1);
+            position: relative;
+        }
+
+        .lane {
+            height: 50px;
+            border-bottom: 1px dashed rgba(255,255,255,0.1);
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .lane:last-child { border-bottom: none; }
+
+        .runner {
+            position: absolute;
+            left: 0;
+            font-size: 2rem;
+            transition: left 0.1s linear;
+            z-index: 2;
+        }
+
+        .finish-line {
+            position: absolute;
+            right: 20px;
+            top: 0;
+            bottom: 0;
+            width: 10px;
+            background: repeating-linear-gradient(45deg, #fff, #fff 5px, #000 5px, #000 10px);
+            opacity: 0.5;
+        }
+
+        .timer {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+
+        /* ===== JOUEURS ===== */
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .player-card {
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 16px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+        .player-card.disabled { opacity: 0.3; filter: grayscale(1); }
+        
+        .player-card.disabled .input-group {
+            pointer-events: none;
+        }
+
+        .toggle-btn {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            pointer-events: auto;
+        }
+
+        .toggle-btn.off {
+            background: #e94560;
+            border-color: #e94560;
+        }
+
+        .player-name { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .player-name input { background: transparent; border: none; border-bottom: 1px solid #e94560; color: #fff; width: 130px; outline: none; }
+
+        .input-group label { font-size: 0.75rem; color: rgba(255,255,255,0.5); display: block; margin-top: 5px; }
+        .input-group select, .input-group input { width: 100%; padding: 8px; border-radius: 8px; background: #0f3460; border: 1px solid rgba(255,255,255,0.2); color: #fff; margin-top: 5px; }
+
+        .start-btn {
+            width: 100%;
+            padding: 20px;
+            border: none;
+            border-radius: 14px;
+            background: #e94560;
+            color: #fff;
+            font-size: 1.3rem;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .start-btn:disabled { background: #555; cursor: not-allowed; }
+
+        /* ===== STATS ===== */
+        .stats-section { margin-top: 30px; background: rgba(255, 255, 255, 0.05); border-radius: 16px; padding: 20px; }
+        .stats-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .stats-table th { font-size: 0.75rem; color: rgba(255,255,255,0.5); padding: 10px; border-bottom: 2px solid rgba(255,255,255,0.1); }
+        .stats-table td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+        .history { margin-top: 20px; max-height: 100px; overflow-y: auto; }
+        .history-item { font-size: 0.8rem; padding: 5px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+        /* POPUP */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 100; }
+        .popup { background: #1a1a2e; padding: 30px; border-radius: 20px; text-align: center; border: 2px solid #e94560; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <a href="index.html" class="back-home">← Retour à l'accueil</a>
+        <h1>🏃 JEU DE COURSE - COURSE HUMAINE</h1>
+        
+        <div class="timer" id="timerDisplay">Temps restant : 30s</div>
+
+        <div class="track-container">
+            <div class="finish-line"></div>
+            <div class="lane"><div id="runner-red" class="runner">🏃🔴</div></div>
+            <div class="lane"><div id="runner-blue" class="runner">🏃🔵</div></div>
+            <div class="lane"><div id="runner-green" class="runner">🏃🟢</div></div>
+            <div class="lane"><div id="runner-yellow" class="runner">🏃🟡</div></div>
+        </div>
+
+        <div class="players-grid">
+            <!-- Les 3 joueurs -->
+            <script>
+                for(let i=0; i<3; i++) {
+                    document.write(`
+                        <div class="player-card" id="card-${i}">
+                            <div class="player-name">
+                                <input type="text" id="name-${i}" value="Joueur ${i+1}">
+                                <button class="toggle-btn" onclick="togglePlayer(${i})" id="tgl-${i}">ON</button>
+                            </div>
+                            <div class="input-group">
+                                <label>Couleur choisie</label>
+                                <select id="color-${i}">
+                                    <option value="red">Rouge 🔴</option>
+                                    <option value="blue">Bleu 🔵</option>
+                                    <option value="green">Vert 🟢</option>
+                                    <option value="yellow">Jaune 🟡</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Mise (Ar)</label>
+                                <input type="number" id="bet-${i}" placeholder="Min 500" min="500">
+                            </div>
+                        </div>
+                    `);
+                }
+            </script>
+        </div>
+
+        <button class="start-btn" id="startBtn" onclick="startRace()">🏁 Lancer la course (30s)</button>
+
+        <div class="history" id="history"></div>
+
+        <div class="stats-section">
+            <h3>📊 Bilan Caissier</h3>
+            <table class="stats-table">
+                <thead>
+                    <tr><th>Joueur</th><th>Total Misé</th><th>Bilan Net</th></tr>
+                </thead>
+                <tbody id="stats-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay">
+        <div class="popup">
+            <h2 id="winText">Gagnant !</h2>
+            <button onclick="closePopup()" style="margin-top:20px; padding:10px 20px; cursor:pointer;">Continuer</button>
+        </div>
+    </div>
+
+    <script>
+        let players = [{active:true, total:0, net:0}, {active:true, total:0, net:0}, {active:true, total:0, net:0}];
+        let isRacing = false;
+        const COLORS = { red: 'Rouge 🔴', blue: 'Bleu 🔵', green: 'Vert 🟢', yellow: 'Jaune 🟡' };
+
+        function togglePlayer(id) {
+            players[id].active = !players[id].active;
+            const card = document.getElementById(`card-${id}`);
+            const btn = document.getElementById(`tgl-${id}`);
+            card.classList.toggle('disabled', !players[id].active);
+            btn.textContent = players[id].active ? 'ON' : 'OFF';
+            btn.classList.toggle('off', !players[id].active);
+        }
+
+        function startRace() {
+            if(isRacing) return;
+            let bets = [];
+            for(let i=0; i<3; i++) {
+                let b = parseInt(document.getElementById(`bet-${i}`).value);
+                if(players[i].active && b >= 500) bets.push({id:i, amount:b, choice:document.getElementById(`color-${i}`).value});
+            }
+            if(bets.length === 0) return alert("Misez au moins 500 Ar");
+
+            isRacing = true;
+            document.getElementById('startBtn').disabled = true;
+            
+            let runners = { red:0, blue:0, green:0, yellow:0 };
+            let timeLeft = 30;
+            let duration = 30000;
+            let startTime = Date.now();
+            const trackWidth = document.querySelector('.lane').clientWidth - 60;
+
+            let raceInterval = setInterval(() => {
+                let elapsed = Date.now() - startTime;
+                let remaining = Math.max(0, 30 - Math.floor(elapsed / 1000));
+                document.getElementById('timerDisplay').textContent = `Temps restant : ${remaining}s`;
+
+                let reachedFinish = false;
+                for(let r in runners) {
+                    // Mouvement progressif
+                    runners[r] += (Math.random() * 0.6 + 0.7) * (trackWidth / 300); 
+                    let currentPos = Math.min(trackWidth, runners[r]);
+                    document.getElementById(`runner-${r}`).style.left = currentPos + "px";
+                    if (currentPos >= trackWidth) reachedFinish = true;
+                }
+
+                if(reachedFinish || elapsed >= duration) {
+                    clearInterval(raceInterval);
+                    
+                    // On identifie le vainqueur (le premier à toucher la ligne ou le plus avancé)
+                    let winner = Object.keys(runners).reduce((a, b) => runners[a] > runners[b] ? a : b);
+                    runners[winner] = trackWidth;
+                    document.getElementById(`runner-${winner}`).style.left = trackWidth + "px";
+
+                    finishRace(runners, bets);
+                }
+            }, 100);
+        }
+
+        function finishRace(runners, bets) {
+            let winner = Object.keys(runners).reduce((a, b) => runners[a] > runners[b] ? a : b);
+            
+            bets.forEach(b => {
+                players[b.id].total += b.amount;
+                if(b.choice === winner) {
+                    players[b.id].net += b.amount; // Mise doublée = +montant en net
+                    addHistory(b.id, true, b.amount);
+                } else {
+                    players[b.id].net -= b.amount;
+                    addHistory(b.id, false, b.amount);
+                }
+            });
+
+            document.getElementById('winText').innerHTML = `LE GAGNANT EST : ${COLORS[winner]}`;
+            document.getElementById('overlay').style.display = 'flex';
+            updateUI();
+        }
+
+        function updateUI() {
+            const body = document.getElementById('stats-body');
+            body.innerHTML = '';
+            players.forEach((p, i) => {
+                let name = document.getElementById(`name-${i}`).value;
+                body.innerHTML += `<tr>
+                    <td>${name}</td>
+                    <td>${p.total} Ar</td>
+                    <td style="color:${p.net >= 0 ? '#2ed573' : '#ff4757'}">${p.net} Ar</td>
+                </tr>`;
+            });
+        }
+
+        function addHistory(id, win, amount) {
+            const h = document.getElementById('history');
+            let name = document.getElementById(`name-${id}`).value;
+            let item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerHTML = `<span style="color:${win?'#2ed573':'#ff4757'}">${win?'✅':'❌'}</span> ${name} : ${win?'+':'-'}${win?amount*2:amount} Ar`;
+            h.prepend(item);
+        }
+
+        function closePopup() {
+            document.getElementById('overlay').style.display = 'none';
+            ['red', 'blue', 'green', 'yellow'].forEach(c => document.getElementById(`runner-${c}`).style.left = "0px");
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('timerDisplay').textContent = "Temps restant : 30s";
+            isRacing = false;
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>

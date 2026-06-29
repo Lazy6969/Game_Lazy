@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎡 Jeu de Roue</title>
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            padding: 0;
+            overflow-y: auto;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        .game-container {
+            position: relative;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .back-home {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        .back-home:hover { color: #00d4ff; }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, #00ff88, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* ===== ZONE DE LA ROUE ===== */
+        .wheel-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin-bottom: 40px;
+            height: 300px;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 260px;
+            height: 260px;
+        }
+
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 8px solid #fff;
+            position: relative;
+            transition: transform 4s cubic-bezier(0.1, 0, 0.2, 1);
+            background: conic-gradient(
+                #ff4757 0deg 45deg,
+                #2ed573 45deg 90deg,
+                #ffd200 90deg 135deg,
+                #2e86de 135deg 180deg,
+                #f368e0 180deg 225deg,
+                #ff9f43 225deg 270deg,
+                #00d2d3 270deg 315deg,
+                #54a0ff 315deg 360deg
+            );
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        .wheel-num {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.8rem;
+            color: white;
+            padding-top: 20px;
+        }
+
+        .n1 { transform: rotate(22.5deg); }
+        .n2 { transform: rotate(67.5deg); }
+        .n3 { transform: rotate(112.5deg); }
+        .n4 { transform: rotate(157.5deg); }
+        .n5 { transform: rotate(202.5deg); }
+        .n6 { transform: rotate(247.5deg); }
+        .n7 { transform: rotate(292.5deg); }
+        .n8 { transform: rotate(337.5deg); }
+
+        .pointer {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            background: #fff;
+            clip-path: polygon(50% 100%, 0 0, 100% 0);
+            z-index: 10;
+        }
+
+        /* ===== JOUEURS ===== */
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .player-card {
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 16px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .player-card.disabled { opacity: 0.3; filter: grayscale(1); }
+        .player-card.disabled .input-group { pointer-events: none; }
+
+        .player-name { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .player-name input { background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.2); color: #00ff88; width: 100px; outline: none; font-weight: bold; }
+
+        .toggle-btn { font-size: 0.7rem; padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; cursor: pointer; }
+        .toggle-btn.off { background: #ff4757; }
+
+        .input-group label { font-size: 0.75rem; color: rgba(255,255,255,0.5); display: block; margin-top: 5px; }
+        .input-group select, .input-group input { width: 100%; padding: 8px; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); color: #fff; margin-top: 5px; }
+
+        .spin-btn {
+            width: 100%;
+            padding: 20px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+            color: #1a1a2e;
+            font-size: 1.3rem;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.2);
+        }
+        .spin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ===== STATS & HISTORIQUE ===== */
+        .stats-section { margin-top: 30px; background: rgba(255, 255, 255, 0.05); border-radius: 16px; padding: 20px; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .stats-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .stats-table th { font-size: 0.75rem; color: rgba(255,255,255,0.5); padding: 10px; border-bottom: 2px solid rgba(255,255,255,0.1); }
+        .stats-table td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
+
+        .history { margin-top: 25px; max-height: 120px; overflow-y: auto; }
+        .history-item { display: flex; justify-content: space-between; padding: 8px 14px; border-radius: 8px; margin-bottom: 4px; font-size: 0.8rem; background: rgba(255,255,255,0.05); }
+
+        /* POPUP */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .popup { background: #1a1b3a; padding: 40px; border-radius: 20px; text-align: center; border: 1px solid #00ff88; }
+        .close-btn { margin-top: 20px; padding: 10px 20px; cursor: pointer; background: #00ff88; border: none; color: #1a1a2e; border-radius: 8px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <a href="index.html" class="back-home">← Retour à l'accueil</a>
+        <h1>🎡 JEU DE ROUE</h1>
+        
+        <div class="wheel-area">
+            <div class="pointer"></div>
+            <div class="wheel-container">
+                <div id="wheel" class="wheel">
+                    <div class="wheel-num n1">🃏</div>
+                    <div class="wheel-num n2">🤴</div>
+                    <div class="wheel-num n3">👸</div>
+                    <div class="wheel-num n4">👑</div>
+                    <div class="wheel-num n5">🅰️</div>
+                    <div class="wheel-num n6">💰</div>
+                    <div class="wheel-num n7">💎</div>
+                    <div class="wheel-num n8">✨</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="players-grid">
+            <script>
+                for(let i=0; i<3; i++) {
+                    document.write(`
+                        <div class="player-card" id="card-${i}">
+                            <div class="player-name">
+                                <input type="text" id="name-${i}" value="Joueur ${i+1}">
+                                <button class="toggle-btn" onclick="togglePlayer(${i})" id="tgl-${i}">ON</button>
+                            </div>
+                            <div class="input-group">
+                                <label>Carte choisie</label>
+                                <select id="choice-${i}">
+                                    <option value="1">🃏 Joker</option>
+                                    <option value="2">🤴 Fou</option>
+                                    <option value="3">👸 Dame</option>
+                                    <option value="4">👑 Roi</option>
+                                    <option value="5">🅰️ As</option>
+                                    <option value="6">💰 Trésor</option>
+                                    <option value="7">💎 Diamant</option>
+                                    <option value="8">✨ Étoile</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Mise (Ar)</label>
+                                <input type="number" id="bet-${i}" placeholder="Min 500" min="500">
+                            </div>
+                        </div>
+                    `);
+                }
+            </script>
+        </div>
+
+        <button class="spin-btn" id="spinBtn" onclick="startSpin()">🎡 Tourner la roue</button>
+
+        <div class="history" id="history"></div>
+
+        <div class="stats-section">
+            <h3>📊 Bilan Caissier</h3>
+            <table class="stats-table">
+                <thead>
+                    <tr><th>Joueur</th><th>Total Misé</th><th>Bilan Net</th></tr>
+                </thead>
+                <tbody id="stats-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay">
+        <div class="popup">
+            <h2>RÉSULTAT</h2>
+            <h1 id="res-num" style="font-size: 4rem; margin: 20px 0;">?</h1>
+            <p id="res-desc"></p>
+            <button class="close-btn" onclick="closePopup()">Continuer</button>
+        </div>
+    </div>
+
+    <script>
+        let players = [{active:true, total:0, net:0}, {active:true, total:0, net:0}, {active:true, total:0, net:0}];
+        let isSpinning = false;
+        let currentRotation = 0;
+
+        const CARD_NAMES = {
+            1: "🃏 Joker",
+            2: "🤴 Fou",
+            3: "👸 Dame",
+            4: "👑 Roi",
+            5: "🅰️ As",
+            6: "💰 Trésor",
+            7: "💎 Diamant",
+            8: "✨ Étoile"
+        };
+
+        function togglePlayer(id) {
+            players[id].active = !players[id].active;
+            document.getElementById(`card-${id}`).classList.toggle('disabled', !players[id].active);
+            const btn = document.getElementById(`tgl-${id}`);
+            btn.textContent = players[id].active ? 'ON' : 'OFF';
+            btn.classList.toggle('off', !players[id].active);
+        }
+
+        function startSpin() {
+            if(isSpinning) return;
+            let activeBets = [];
+            for(let i=0; i<3; i++) {
+                let b = parseInt(document.getElementById(`bet-${i}`).value);
+                if(players[i].active && b >= 500) activeBets.push({id:i, amount:b, choice:parseInt(document.getElementById(`choice-${i}`).value)});
+            }
+            if(activeBets.length === 0) return alert("Misez au moins 500 Ar");
+
+            isSpinning = true;
+            document.getElementById('spinBtn').disabled = true;
+
+            const winner = Math.floor(Math.random() * 8) + 1;
+            const extraCircles = Math.floor(Math.random() * 5) + 5;
+            const deg = (winner - 1) * 45 + 22.5; 
+            currentRotation += (extraCircles * 360) + (360 - (currentRotation % 360)) - deg;
+            
+            document.getElementById('wheel').style.transform = `rotate(${currentRotation}deg)`;
+
+            setTimeout(() => {
+                activeBets.forEach(b => {
+                    players[b.id].total += b.amount;
+                    if(b.choice === winner) {
+                        players[b.id].net += b.amount;
+                        addHistory(b.id, winner, true, b.amount);
+                    } else {
+                        players[b.id].net -= b.amount;
+                        addHistory(b.id, winner, false, b.amount);
+                    }
+                });
+
+                document.getElementById('res-num').textContent = CARD_NAMES[winner];
+                document.getElementById('res-desc').textContent = `La carte gagnante est : ${CARD_NAMES[winner]}`;
+                document.getElementById('overlay').style.display = 'flex';
+                updateUI();
+            }, 4000);
+        }
+
+        function updateUI() {
+            const body = document.getElementById('stats-body');
+            body.innerHTML = '';
+            players.forEach((p, i) => {
+                let name = document.getElementById(`name-${i}`).value || `J${i+1}`;
+                body.innerHTML += `<tr><td>${name}</td><td>${p.total} Ar</td><td style="color:${p.net >= 0 ? '#2ed573' : '#ff4757'}">${p.net} Ar</td></tr>`;
+            });
+        }
+
+        function addHistory(id, winner, win, amount) {
+            const h = document.getElementById('history');
+            let name = document.getElementById(`name-${id}`).value;
+            let item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerHTML = `<span>${name} | 🎡 Roue: ${CARD_NAMES[winner]}</span> <span>${win ? '✅ +' : '❌ -'}${win ? amount * 2 : amount} Ar</span>`;
+            h.prepend(item);
+        }
+
+        function closePopup() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('spinBtn').disabled = false;
+            isSpinning = false;
+        }
+        updateUI();
+    </script>
+</body>
+</html>
